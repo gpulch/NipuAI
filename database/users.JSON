@@ -1,0 +1,14 @@
+{
+  "ADMINS": [],
+
+  "USERS": [
+    {
+      "userId": 1,
+      "name": "John Doe"
+    },
+    {
+      "userId": 2,
+      "name": "Jane Doe"
+    }
+  ]
+}
