@@ -1,0 +1,121 @@
+import time
+from bs4 import BeautifulSoup
+import pandas as pd
+import requests
+import re
+import random
+
+def scrapingPages(nombrePages):
+
+    #Initialisation des variables
+    url = 'https://www.lecigare.ch/fr/d382_cigares.html?page='
+    pages = 1
+    liens = []
+    
+    while pages <= nombrePages:
+        url_page = url +str(pages)
+        codeHtml_page = requests.get(url_page).text
+
+        #Navigation dans les balises HTML
+        soup_page = BeautifulSoup(codeHtml_page, 'html.parser')
+        
+        # Trouver toutes les balises <a> avec la classe "thumbnail product-thumbnail"
+        balises_a = soup_page.find_all('a', class_='thumbnail product-thumbnail')
+
+        # Parcourir toutes les balises <a> et extraire les valeurs de l'attribut "href"
+        for balise_a in balises_a:
+            lien = balise_a.get('href')
+            liens.append(lien)
+        
+        # Master liste
+        liens.append(lien)
+        
+        # Incrémentation boucle while
+        pages += 1
+        
+        # Requêtage différé aléatoire
+        time.sleep(random.uniform(0, 3))
+        
+    # Retour fonction
+    return liens
+
+def scrapingProduit(url_produit, siteInternet):
+
+    codeHtml_produit = requests.get(url_produit).text
+
+    #Navigation dans les balises HTML
+    soup_produit = BeautifulSoup(codeHtml_produit, 'html.parser')
+
+    # Balises <hl>
+    balise_h1 = soup_produit.find('h1')
+
+    # Extraire le texte de la balise <h1>
+    texte_balise_h1 = balise_h1.text
+
+    # Trouver toutes les balises <span> avec l'attribut "itemprop" égal à "price"
+    balises_span = soup_produit.find_all('span', itemprop='price')
+
+    # Parcourir toutes les balises <span> et extraire les informations
+    for balise_span in balises_span:
+        # Extraire le texte de la balise <span>
+        texte = balise_span.text.strip()
+
+        # Utiliser une expression régulière pour extraire le prix (en nombre) et la devise (en lettres)
+        correspondance = re.match(r'([\d,.]+)\s*([\w]+)', texte)
+
+        if correspondance:
+            # Récupérer le prix (en nombre) et la devise (en lettres)
+            prix = []
+            devise = []
+            prix.append(correspondance.group(1))
+            devise.append(correspondance.group(2))
+
+    # Trouver toutes les balises <p> qui contiennent du texte fort <strong>
+    balises_p = soup_produit.find_all('p')
+    texte_strong = []
+
+    for balise_p in balises_p:
+        texte_fort = balise_p.find('strong')
+        if texte_fort:
+            texte_strong.append(texte_fort.text.strip())
+    
+    quantité = texte_strong[2]
+
+    # Balises <dl>
+    balise_dl = soup_produit.find("dl", class_="data-sheet")
+
+    # Extraire le texte de la balise <dl> incluant ses enfants <dt> et <dd>
+    texte_balise_dl = balise_dl.text
+
+    # Diviser le texte en paires de titres et de valeurs
+    paires = texte_balise_dl.split('\n')
+    # Supprimer les chaînes vides de la liste
+    paires = [element.strip() for element in paires if element.strip()]
+
+
+    # Créer un dictionnaire 'data frame' à partir des paires et ajouter le nom, le prix et la devise
+    df = []
+    for i in range(1, len(paires), 2):
+        df.append(paires[i])
+    df = df + [texte_balise_h1, prix[0], devise[0], quantité, siteInternet]
+    
+    #Retour de la fonction
+    return df
+
+listeURL = scrapingPages(4)
+
+noms_de_colonnes = ['Puissance', 'Ring', 'Durée', 'Arômes', 'Diamètre', 'Longueur', 'Module', 'Pays', 'Nom', 'Prix', 'Devise', 'Quantité', 'Site']
+master_df = pd.DataFrame(columns=noms_de_colonnes)
+
+for element in listeURL:
+    try:
+        df_provisoire = pd.DataFrame([scrapingProduit(element, 'LeCigare')], columns=noms_de_colonnes)
+        master_df = pd.concat([master_df, df_provisoire], axis=0, ignore_index=True)
+    except:
+        df_provisoire = pd.DataFrame([], columns=noms_de_colonnes)
+        master_df = pd.concat([master_df, df_provisoire], axis=0, ignore_index=True)
+        
+    # Requêtage différé aléatoire
+    time.sleep(random.uniform(0, 3))
+
+print(master_df)
