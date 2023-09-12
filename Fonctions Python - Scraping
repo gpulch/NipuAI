@@ -1,0 +1,52 @@
+##Fonctions de scraping avec user agent variable et timeout aléatoire lors du requêtage HTTP. La fonction itération permet de scraping plusieurs pages qui se suivent dans le chemin URL.
+Les données sont stockées dans une liste contenant un élément par page HTML.
+
+
+import time
+from bs4 import BeautifulSoup
+import pandas as pd
+import requests
+import re
+import random
+
+
+# Ci dessous le dictionnaire de Headers User Agents, il est possible de le modifier/compléter
+dic_user_agents = {'Mac OS Intel avec Safari' : {'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding': 'gzip, deflate, br', 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15',  'Accept-Language': 'fr-ch', 'Connection': 'keep-alive'},
+                   'Mac OS M1 avec Opera' : {'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding': 'gzip, deflate, br', 'User-Agent': 'Mozilla/5.0 (Macintosh; Apple Mac M1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36 OPR/79.0.4143.72',  'Accept-Language': 'fr-ch', 'Connection': 'keep-alive'},
+                   'Mac OS M1 avec Google Chrome' : {'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding': 'gzip, deflate, br', 'User-Agent': 'Mozilla/5.0 (Macintosh; Apple Mac M1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36',  'Accept-Language': 'fr-ch', 'Connection': 'keep-alive'},
+                   'Mac OS Intel avec Google Chrome' : {'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding': 'gzip, deflate, br', 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36',  'Accept-Language': 'fr-ch', 'Connection': 'keep-alive'}}
+
+
+def requête_HTML(url_page, user_Agents= dic_user_agents):
+    
+        # Header user agent aléatoire
+        user_agent_headers = list(user_Agents.values())[random.randint(0, len(list(user_Agents.values()))-1)]
+    
+        # Envoyer une requête GET
+        response = requests.get(url_page, headers=user_agent_headers)
+        
+        # Vérifier le code de réponse
+        if response.status_code == 200:
+            return response.text
+        else:
+            # Le code de réponse n'est pas 200, il peut y avoir une erreur.
+            print("La requête a retourné un code de réponse non valide :", response.status_code, url_page)
+        
+        
+def itération_pages_HTML(url, premièrePage, dernièrePage, requêtageBorneMin = 5, requêtageBorneMax = 10):
+       
+    #Initialisation des variables
+    numéroPage = premièrePage
+    liste_HTML = []
+    
+    while numéroPage <= dernièrePage:
+        x = requête_HTML(url + str(numéroPage))
+        liste_HTML.append(x)
+        return liste_HTML
+
+        # Incrémentation boucle while
+        numéroPage += 1
+        
+        # Requêtage différé
+        time.sleep(random.uniform(requêtageBorneMin, requêtageBorneMax))
+
