@@ -49,4 +49,3 @@ def itération_pages_HTML(url, premièrePage, dernièrePage, requêtageBorneMin 
         
         # Requêtage différé
         time.sleep(random.uniform(requêtageBorneMin, requêtageBorneMax))
-
