@@ -3,7 +3,7 @@ Les données sont stockées dans une liste contenant un élément par page HTML.
 
 ##Fonction de visualisation de graphique matplotli
 
-##Fonction de scraping du site LeCigare.ch des pages produits, renvoie un Datafram Pandas (CSV ou Excel) en retour, il suffit d'itérer sur toutes les pages produits (une centaine).
+##Fonction de scraping du site LeCigare.ch des pages produits, renvoie un Datafram Pandas (CSV ou Excel) en retour, il suffit d'itérer sur toutes les pages produits (une centaine). La récupération des champs est dans un 'Try' 'Except' ce qui renvoie une valeur vide si une valeur n'est pas trouvée.
 
 
 import time
@@ -76,14 +76,40 @@ def scraping_pages_produits_LeCigare(page_HTML):
     product_descriptions = soup.find_all('div', class_='product-description')
 
     for product in product_descriptions:
-        name_product = product.find('h2').text.strip()
-        terr_product = product.find('div', class_='listing_short_description').text.strip()
-        puis_product = product.find('p', class_='ndk-feat-group-3').text.strip()
-        ar_product = product.find('p', class_='ndk-feat-group-11').text.strip()
-        pric_product = product.find('span', class_='price').text.strip()
-        disp_product = product.find('span', class_='buy-button').text.strip()
-
+        
+        try:
+            name_product = product.find('h2').text.strip()
+        except AttributeError:
+            name_product = ''
+        
+        try:
+            terr_product = product.find('div', class_='listing_short_description').text.strip()
+        except AttributeError:
+            terr_product = ''
+        
+        try:
+            puis_product = product.find('p', class_='ndk-feat-group-3').text.strip()
+        except AttributeError:
+            puis_product = ''
+        
+        try:
+            ar_product = product.find('p', class_='ndk-feat-group-11').text.strip()
+        except AttributeError:
+            ar_product = ''
+        
+        try:
+            pric_product = product.find('span', class_='price').text.strip()
+        except AttributeError:
+            pric_product = ''
+        
+        try:
+            disp_product = product.find('span', class_='buy-button').text.strip()
+        except AttributeError:
+            disp_product = ''
+        
         s2 = pd.Series([name_product, terr_product, puis_product, ar_product, pric_product, disp_product], index=['Nom', 'Terroir', 'Puissance', 'Arôme principal', 'Prix', 'Disponibilité'])
 
         df = pd.concat([df, s2.to_frame().T], ignore_index=True)
+    
+    df[['Terroir', 'Marque', 'Quantité']] = df['Terroir'].str.split('\n', expand=True)
     return df
